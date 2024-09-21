@@ -1,9 +1,10 @@
 from typing import List, Dict
 
-from library.intervals import chord_patterns
-from scale_fretboard_generator import ScaleFretboardGenerator
+from app.library.intervals import chord_patterns
+from app.scale_fretboard import ScaleFretboard
+from app.utils import print_fretboard, apply_fret_marker
 
-class ChordFretboardGenerator(ScaleFretboardGenerator):
+class ChordFretboard(ScaleFretboard):
 
     """
     A class to generate a guitar fretboard representation containing the notes of a specific chord derived from the inherited scale, in both horizontal and vertical orientations.
@@ -16,9 +17,11 @@ class ChordFretboardGenerator(ScaleFretboardGenerator):
     
     """
 
-    def __init__(self, chord_pattern: List[int] = chord_patterns["notes_3"]) -> None:
+    def __init__(self, 
+                 chord_pattern: List[int] = chord_patterns["notes_3"]
+                 ) -> None:
 
-        # Refers to the ScaleFretboardGenerator constructor.
+        # Refers to the ScaleFretboard constructor.
         super().__init__()
 
         self.chord_pattern: List[int] = chord_pattern
@@ -70,20 +73,20 @@ class ChordFretboardGenerator(ScaleFretboardGenerator):
 
 
 
-print("--------------------")
+if __name__ == "__main__":
 
-demo_chord_fretboard = ChordFretboardGenerator()
+    print("--------------------")
 
-demo_chord_fretboard_dict = demo_chord_fretboard.chord_fretboard_dict
+    demo_chord_fretboard = ChordFretboard()
 
-print(demo_chord_fretboard.scale_notes)
+    demo_chord_fretboard_dict = demo_chord_fretboard.chord_fretboard_dict
 
-print(demo_chord_fretboard.chord_notes_dict)
+    print(demo_chord_fretboard.scale_notes)
+    print(demo_chord_fretboard.chord_notes_dict)
 
-demo_chord_fretboard.apply_fret_marker(demo_chord_fretboard_dict, orientation="x", chord=1)
+    apply_fret_marker(demo_chord_fretboard_dict, orientation="x", chord=1)
 
-# demo_chord_fretboard.apply_fret_marker(demo_chord_fretboard_dict, orientation="y", chord=1)
+    print_fretboard(demo_chord_fretboard_dict, orientation="x", chord=1)
+    print_fretboard(demo_chord_fretboard_dict, orientation="y", chord=1)
 
-demo_chord_fretboard.print_fretboard(demo_chord_fretboard_dict, orientation="x", chord=1)
 
-demo_chord_fretboard.print_fretboard(demo_chord_fretboard_dict, orientation="y", chord=1)

@@ -1,11 +1,10 @@
 from typing import List, Dict
 
-from library.intervals import scale_patterns
-from fretboard_generator import FretboardGenerator
+from app.library.intervals import scale_patterns
+from app.fretboard_generator import FretboardGenerator
+from app.utils import print_fretboard, apply_fret_marker
 
-
-
-class ScaleFretboardGenerator(FretboardGenerator):
+class ScaleFretboard(FretboardGenerator):
 
     """
     A class to generate a guitar fretboard representation containing the notes of a specific scale, in both horizontal and vertical orientations.
@@ -20,7 +19,10 @@ class ScaleFretboardGenerator(FretboardGenerator):
     
     """
 
-    def __init__(self, key: str = "C", scale_pattern: List[int] = scale_patterns["major_scale"]) -> None:
+    def __init__(self, 
+                 key: str = "C", 
+                 scale_pattern: List[int] = scale_patterns["major_scale"]
+                 ) -> None:
 
         # Refers to the FretboardGenerator class constructor.
         super().__init__()
@@ -55,16 +57,17 @@ class ScaleFretboardGenerator(FretboardGenerator):
 
 
 
-print("--------------------")
+if __name__ == "__main__":
 
-demo_scale_fretboard = ScaleFretboardGenerator()
+    print("--------------------")
 
-demo_scale_fretboard_dict = demo_scale_fretboard.scale_fretboard_dict
+    demo_scale_fretboard = ScaleFretboard()
 
-demo_scale_fretboard.apply_fret_marker(demo_scale_fretboard_dict, orientation="x")
+    demo_scale_fretboard_dict = demo_scale_fretboard.scale_fretboard_dict
 
-# demo_scale_fretboard.apply_fret_marker(demo_scale_fretboard_dict, orientation="y")
+    apply_fret_marker(demo_scale_fretboard_dict, orientation="x")
 
-demo_scale_fretboard.print_fretboard(demo_scale_fretboard_dict, orientation="x")
+    print_fretboard(demo_scale_fretboard_dict, orientation="x")
+    print_fretboard(demo_scale_fretboard_dict, orientation="y")
 
-demo_scale_fretboard.print_fretboard(demo_scale_fretboard_dict, orientation="y")
+
