@@ -81,9 +81,6 @@ if __name__ == "__main__":
 
     demo_chord_fretboard_dict = demo_chord_fretboard.chord_fretboard_dict
 
-    print(demo_chord_fretboard.scale_notes)
-    print(demo_chord_fretboard.chord_notes_dict)
-
     apply_fret_marker(demo_chord_fretboard_dict, orientation="x", chord=1)
 
     print_fretboard(demo_chord_fretboard_dict, orientation="x", chord=1)

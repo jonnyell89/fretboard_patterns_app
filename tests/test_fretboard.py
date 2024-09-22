@@ -10,7 +10,7 @@ def test_fretboard_generator_init():
 
     assert fretboard.fretboard_len == STRING_LEN
 
-    assert len(fretboard.strings) == NUM_STRINGS
+    assert len(fretboard.tuning) == NUM_STRINGS
 
     assert "x" in fretboard.fretboard_dict
 
