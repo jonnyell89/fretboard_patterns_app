@@ -1,11 +1,12 @@
 import pytest
 
-from config.config import FRETBOARD_LEN
-from app.string_generator import StringGenerator
+from config.config import CHROMATIC_SCALE, FRETBOARD_LEN
+from archive.string_generator import StringGenerator
 
-def test_string_generator_init():
+@pytest.mark.parametrize("root_note", CHROMATIC_SCALE)
+def test_string_generator_init(root_note):
 
-    string = StringGenerator("E")
+    string = StringGenerator(root_note=root_note)
 
     assert string.string_len == FRETBOARD_LEN
 
