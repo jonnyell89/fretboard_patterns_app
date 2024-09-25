@@ -1,6 +1,6 @@
 import pytest
 
-from config.config import NUM_STRINGS, STRING_LEN
+from config.config import NUM_STRINGS, STRING_LEN, FRETBOARD_LEN
 from app.library.tunings import tunings
 from app.fretboard_generator import FretboardGenerator
 
@@ -16,6 +16,8 @@ def test_fretboard_generator_init():
 
     assert "y" in fretboard.fretboard_dict
 
+    assert len(fretboard.frets) == FRETBOARD_LEN
+
 @pytest.mark.parametrize("tuning_name, expected_tuning", [
     ("e_standard", tunings["e_standard"][::-1]), 
     ("open_c", tunings["open_c"][::-1])
@@ -26,6 +28,14 @@ def test_fretboard_tuning(tuning_name, expected_tuning):
     fretboard = FretboardGenerator(tuning=tunings[tuning_name])
 
     assert fretboard.tuning == expected_tuning
+
+def test_generate_strings():
+
+    fretboard = FretboardGenerator()
+
+    assert set(fretboard.string_dict.keys()) == set(fretboard.tuning)
+
+    assert all(len(string) == STRING_LEN for string in fretboard.string_dict.values())
 
 def test_generate_fretboard_x():
 
