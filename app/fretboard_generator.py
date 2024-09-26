@@ -1,7 +1,7 @@
 from typing import List, Dict
 
-from config.config import CHROMATIC_SCALE, FRETBOARD_LEN, FRETS
-from app.library.tunings import tunings
+from config.config import CHROMATIC_SCALE, FRETBOARD_LEN, FRETS, DEFAULT_TUNING
+# from app.library.tunings import tunings
 from app.utils import print_fretboard, apply_fret_marker
 
 class FretboardGenerator:
@@ -24,7 +24,7 @@ class FretboardGenerator:
     def __init__(self, 
                  fretboard_len: int = FRETBOARD_LEN, 
                  chromatic_scale: List[str] = CHROMATIC_SCALE, 
-                 tuning: List[str] = tunings["e_standard"]
+                 tuning: List[str] = DEFAULT_TUNING
                  ) -> None:
         
         self.fretboard_len: int = fretboard_len
