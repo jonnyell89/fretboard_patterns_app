@@ -1,15 +1,14 @@
-from app.fretboard_generator import FretboardGenerator
+from app.scale_generator import ScaleGenerator
+from app.chord_generator import ChordGenerator
 from app.scale_fretboard import ScaleFretboard
-from app.chord_fretboard import ChordFretboard
-from app.interval_fretboard import IntervalFretboard
-from app.pitch_fretboard import PitchFretboard
+from app.utils import generate_sequence_from_intervals, generate_string
 
 __all__ = [
 
-    "FretboardGenerator",
+    "ScaleGenerator",
+    "ChordGenerator",
     "ScaleFretboard",
-    "ChordFretboard",
-    "IntervalFretboard",
-    "PitchFretboard"
+    "generate_sequence_from_intervals",
+    "generate_string"
     
 ]

@@ -1,15 +1,16 @@
-from app.library.intervals import scale_patterns, chord_patterns, pitch_notations
-from app.library.names import note_intervals, key_names, chord_names
+from app.library.enums import ScaleTypes, ChordTypes
+from app.library.intervals import scale_intervals, chord_intervals, pitch_notations
 from app.library.tunings import tunings
+from app.library.degrees import chord_degrees
 
 __all__ = [
 
-    "scale_patterns",
-    "chord_patterns",
+    "ScaleTypes",
+    "ChordTypes",
+    "scale_intervals",
+    "chord_intervals",
     "pitch_notations",
-    "note_intervals",
-    "key_names",
-    "chord_names",
-    "tunings"
+    "tunings",
+    "chord_degrees"
     
 ]

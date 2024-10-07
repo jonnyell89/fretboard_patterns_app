@@ -1,78 +1,133 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
-from config.config import DEFAULT_TUNING, DEFAULT_KEY, DEFAULT_SCALE, DEFAULT_CHORD
-# from app.library.tunings import tunings
-# from app.library.intervals import scale_patterns, chord_patterns
-from app.fretboard_generator import FretboardGenerator
-from app.scale_fretboard import ScaleFretboard
-from app.utils import print_fretboard, apply_fret_marker
+from config.config import CHROMATIC_SCALE, FRETBOARD_LEN
+from app.library.degrees import chord_degrees
+from app.library.tunings import tunings
+from app.library.enums import ScaleTypes, ChordTypes
+from app.scale_generator import ScaleGenerator
+from app.chord_generator import ChordGenerator
+from app.utils import generate_string
 
 class ChordFretboard:
 
     """
-    A class to generate a guitar fretboard representation containing the notes of a specific chord derived from the inherited scale, in both horizontal and vertical orientations.
+    A class to generate chord fretboards based on chord notes.
 
     Attributes:
 
-        scale_fretboard: A ScaleFretboard object.
-        chord_pattern: The series of intervals that make up the chord.
-        chord_notes_dict: The series of notes that make up the chord, derived from the inherited scale.
-        chord_fretboard_dict: The horizontal and vertical orientations of the guitar fretboard containing the notes from the chord, derived from the inherited scale.
+        _fretboard_len: The length of the fretboard.
+        _frets: A range object, representing the fret positions on the fretboard.
+        _chromatic_scale: The twelve note chromatic scale.
+        _chord_string_cache: A dictionary, keyed by a tuple of scale key, scale type, chord type and tuning, containing a nested dictionary, keyed by chord degree, containing another nested dictionary with root notes as keys and chord note string representations as values.
     
     """
 
-    def __init__(self, 
-                 scale_fretboard: ScaleFretboard,
-                 chord_pattern: List[int] = DEFAULT_CHORD
-                 ) -> None:
+    def __init__(self):
 
-        self.scale_fretboard = scale_fretboard
-        self.chord_pattern: List[int] = chord_pattern
-        self.chord_notes_dict: Dict[int, List[str]] = {}
-        self.calculate_chord_notes()
-        self.chord_fretboard_dict: Dict[int, Dict[str, List[List[str]]]] = {}
-        self.generate_chord_fretboards()
+        self._fretboard_len: int = FRETBOARD_LEN
+        self._frets: range = range(FRETBOARD_LEN)
+        self._chromatic_scale: List[str] = CHROMATIC_SCALE
+        self._chord_string_cache: Dict[Tuple[str, str, str, Tuple[str, ...]], Dict[str, Dict[str, List[str]]]] = {}
 
-    # Generates a list of notes representing the chords for each scale degree, based on the chord pattern and derived from the inherited scale.
-    def calculate_chord_notes(self) -> None:
+    def get_or_generate_chord_strings(self,
+                                      scale_notes: List[str],
+                                      scale_type: ScaleTypes,
+                                      chord_notes: Dict[str, List[str]],
+                                      chord_type: ChordTypes,
+                                      tuning: List[str]
+                                      ) -> Dict[str, Dict[str, List[str]]]:
+        
+        """
+        Retrieves chord note strings from the cache, based on the scale notes, scale type, chord notes, chord type and tuning.
+        If unavailable, generates chord note strings and stores them in the cache.
+        
+        Args:
 
-        scale_degrees: int = len(self.scale_fretboard.scale_notes)
+            scale_notes: A list containing the scale notes.
+            scale_type: The name of the scale type.
+            chord_notes: A dictionary containing chord degrees as keys and chord notes as values.
+            chord_type: The name of the chord type.
+            tuning: A list containing the root note of each open string.
 
-        for degree_index in range(scale_degrees):
+        Returns:
 
-            chord_notes: List[str] = [self.scale_fretboard.scale_notes[(degree_index + note) % scale_degrees] for note in self.chord_pattern]
+            chord_string_dict: A dictionary, keyed by chord degrees, containing a nested dictionary with root notes as keys and chord note strings as values.
+        
+        """
 
-            self.chord_notes_dict[degree_index + 1] = chord_notes
+        # Defines the chord string cache key
+        chord_string_cache_key: Tuple[str, str, str, Tuple[str, ...]] = (scale_notes[0], scale_type.value, chord_type.value, tuning)
 
-    # Generates a chord orientated guitar fretboard in both horizontal and vertical orientations.
-    def generate_chord_fretboards(self) -> None:
+        # Check if the cache key already exists
+        if chord_string_cache_key in self._chord_string_cache:
 
-        for chord_index, chord in self.chord_notes_dict.items():
+            return self._chord_string_cache[chord_string_cache_key]
+        
+        # Generates chord strings via the helper method
+        chord_string_dict: Dict[str, Dict[str, List[str]]] = self._compute_chord_strings(chord_notes=chord_notes, 
+                                                                                         scale_type=scale_type, 
+                                                                                         chord_type=chord_type, 
+                                                                                         tuning=tuning)
 
-            self.chord_fretboard_dict[chord_index] = {
+        # Stores the dictionary containing the chord strings in the cache
+        self._chord_string_cache[chord_string_cache_key] = chord_string_dict
 
-                "x": self._apply_chords_to_fretboard_x(chord),
-                "y": self._apply_chords_to_fretboard_y(chord)
+        return chord_string_dict
 
-            }
-    
-    # Helper method -> Logic: Applies the chord notes to the scale orientated horizontal guitar fretboard.
-    def _apply_chords_to_fretboard_x(self, chord: List[str]) -> List[List[str]]:
+    def _compute_chord_strings(self,
+                               chord_notes: Dict[str, List[str]],
+                               scale_type: ScaleTypes,
+                               chord_type: ChordTypes,
+                               tuning: List[str]
+                               ) -> Dict[str, Dict[str, List[str]]]:
+        
+        """
+        Computes a guitar string representation containing chord notes and blank spaces for notes that do not exist in the chord.
 
-        horizontal_fretboard = self.scale_fretboard.scale_fretboard_dict["x"]
+        Args:
 
-        chord_fretboard_x: List[List[str]] = [[note if note in chord else "__" for note in string] for string in horizontal_fretboard]
+            chord_notes: A dictionary containing the chord degrees as keys and the chord notes as values.
+            scale_type: The name of the scale type.
+            chord_type: The name of the chord type.
+            tuning: A list containing the root note of each open string.
 
-        return chord_fretboard_x
+        Returns:
 
-    # Helper method -> Logic: Applies the chord notes to the scale orientated vertical guitar fretboard.
-    def _apply_chords_to_fretboard_y(self, chord: List[str]) -> List[List[str]]:
+            chord_degree_dict: A dictionary containing chord degrees as keys and a nested dictionary of root notes as keys and chord note strings as values.
+        
+        """
 
-        vertical_fretboard = self.scale_fretboard.scale_fretboard_dict["y"]
+        # Defines the dictionary to be returned
+        chord_degree_dict: Dict[str, Dict[str, List[str]]] = {}
 
-        chord_fretboard_y: List[List[str]] = [[note if note in chord else "__" for note in string] for string in vertical_fretboard]
+        # Accesses chord notes for each degree in the scale
+        for chord_notes_index, chord_notes_list in enumerate(chord_notes.values()):
 
-        return chord_fretboard_y
+            # Defines the chord degree cache key
+            chord_degree_key = chord_degrees[chord_type.value][scale_type.value][chord_notes_index]
+
+            # Defines the nested dictionary to store the chord note strings for each root note in the tuning
+            chord_string_dict: Dict[str, List[str]] = {}
+        
+            # Generates a chord note string for each root note in the tuning
+            for root_note in tuning:
+            
+                # String root note index position in the chromatic scale
+                root_index: int = self._chromatic_scale.index(root_note)
+
+                # Computes chord note string from the chromatic scale starting at the root index
+                chord_string: List[str] = generate_string(start_position=root_index, 
+                                                          note_sequence=self._chromatic_scale, 
+                                                          scale_or_chord=chord_notes_list, 
+                                                          frets=self._frets)
+
+                # Stores chord note string in the nested dictionary
+                chord_string_dict[root_note] = chord_string
+
+            # Stores the nested dictionary inside the dictionary to be returned
+            chord_degree_dict[chord_degree_key] = chord_string_dict
+
+        return chord_degree_dict
 
 
 
@@ -80,17 +135,34 @@ if __name__ == "__main__":
 
     print("--------------------")
 
-    demo_fretboard_generator = FretboardGenerator(tuning=DEFAULT_TUNING)
+    demo_scale_generator = ScaleGenerator()
 
-    demo_scale_fretboard = ScaleFretboard(fretboard_generator=demo_fretboard_generator, key=DEFAULT_KEY, scale_pattern=DEFAULT_SCALE)
+    demo_scale_notes = demo_scale_generator.get_or_generate_scale(scale_key="C", scale_type=ScaleTypes.MAJOR_SCALE)
 
-    demo_chord_fretboard = ChordFretboard(scale_fretboard=demo_scale_fretboard, chord_pattern=DEFAULT_CHORD)
+    print(demo_scale_notes)
 
-    demo_chord_fretboard_dict = demo_chord_fretboard.chord_fretboard_dict
+    print("--------------------")
 
-    apply_fret_marker(demo_chord_fretboard_dict, orientation="x", chord=1)
+    demo_chord_generator = ChordGenerator()
 
-    print_fretboard(demo_chord_fretboard_dict, orientation="x", chord=1)
-    print_fretboard(demo_chord_fretboard_dict, orientation="y", chord=1)
+    demo_chord_notes = demo_chord_generator.get_or_generate_chord(scale_notes=demo_scale_notes, scale_type=ScaleTypes.MAJOR_SCALE, chord_type=ChordTypes.TRIAD)
 
+    print(demo_chord_notes)
 
+    print("--------------------")
+
+    print(demo_chord_generator._chord_notes_cache)
+
+    print("--------------------")
+
+    demo_chord_fretboard = ChordFretboard()
+
+    demo_chord_string_dict = demo_chord_fretboard.get_or_generate_chord_strings(scale_notes=demo_scale_notes, scale_type=ScaleTypes.MAJOR_SCALE, chord_notes=demo_chord_notes, chord_type=ChordTypes.TRIAD, tuning=tunings["e_standard"])
+
+    print(demo_chord_string_dict)
+
+    print("--------------------")
+
+    print(demo_chord_fretboard._chord_string_cache)
+
+    print("--------------------")

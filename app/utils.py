@@ -1,97 +1,65 @@
-from typing import List, Dict, Optional
+from typing import List
 
-from config.config import FRETS
+def generate_sequence_from_intervals(start_position: int, 
+                                     note_sequence: List[str], 
+                                     intervals: List[int]
+                                     ) -> List[str]:
+    
+    """
+    A function to wrap around a sequence of notes in steps of intervals to compute a new sequence of notes.
+    
+    Args:
 
-# Prints a chromatic, scale or chord based guitar fretboard in a specific orientation.
-def print_fretboard(fretboard_dict: Dict[Optional[int], Dict[str, List[List[str]]]], orientation: str, chord: Optional[int] = None) -> None:
+        start_position: The index position in the sequence of notes where the new sequence begins.
+        note_sequence: The sequence of notes that the new sequence is derived from.
+        intervals: The sequence of intervals that determine the new sequence of notes.
 
-    if not _is_valid_fretboard(fretboard_dict, orientation, chord):
+    Returns:
 
-        return
+        A list of notes derived from the original sequence of notes.
 
-    if chord:
+    """
+    
+    return [note_sequence[(start_position + interval) % len(note_sequence)] for interval in intervals]
 
-        fretboard = fretboard_dict[chord][orientation]
+def generate_string(start_position: int, 
+                    note_sequence: List[str], 
+                    scale_or_chord: List[str], 
+                    frets: range
+                    ) -> List[str]:
 
-    else:
+    """
+    A function to wrap around a sequence of notes with reference to a sequence of scale notes or chord notes, in steps of intervals, to compute a guitar string representation.
+    
+    Args:
 
-        fretboard = fretboard_dict[orientation]
+        start_position: The index position in the sequence of notes where the guitar string representation begins.
+        note_sequence: The sequence of notes that must correspond with the scale notes or chord notes, in order to build the guitar string representation.
+        scale_or_chord: The sequence of notes from either a scale or a chord.
+        frets: A range object, representing the fret positions on the fretboard.
 
-    _print_fretboard(fretboard)
+    Returns:
 
-# Helper method -> Logic: Prints a series of lists representing guitar strings that together represent the guitar fretboard in both horizontal and vertical orientations.
-def _print_fretboard(fretboard: List[List[str]]) -> None:
+        A list of notes derived from the scale notes or chord notes that forms the guitar string representation. 
 
-    for string in fretboard:
+    """
 
-        print([f"{note:<2}" for note in string])
-
-# Applies a list of numbers representing fret markers to a chromatic, scale or chord based guitar fretboard in a specific orientation.
-def apply_fret_marker(fretboard_dict: Dict[Optional[int], Dict[str, List[List[str]]]], orientation: str, chord: Optional[int] = None) -> None:
-
-    if not _is_valid_fretboard(fretboard_dict, orientation, chord):
-
-        return
-
-    if orientation == "x":
-
-        _apply_fret_marker_x(fretboard_dict, chord)
-
-    elif orientation == "y":
-
-        _apply_fret_marker_y(fretboard_dict, chord)
-
-# Helper method -> Logic: Applies a list of numbers representing fret markers to a specific horizontally orientated guitar fretboard.
-def _apply_fret_marker_x(fretboard_dict: Dict[Optional[int], Dict[str, List[List[str]]]], chord: Optional[int] = None) -> None:
-
-    if chord:
-
-        fretboard_dict[chord]["x"].append(FRETS)
-
-    else:
-
-        fretboard_dict["x"].append(FRETS)
-
-# Helper method -> Logic: Applies a list of numbers representing fret markers to a specific vertically orientated guitar fretboard.
-def _apply_fret_marker_y(fretboard_dict: Dict[Optional[int], Dict[str, List[List[str]]]], chord: Optional[int] = None) -> None:
-
-    if chord:
-
-        for index, fret in enumerate(FRETS):
-
-            fretboard_dict[chord]["y"][index].insert(0, fret)
-
-    else:
-
-        for index, fret in enumerate(FRETS):
-
-            fretboard_dict["y"][index].insert(0, fret)
-
-# Helper method -> Error handling: Checks if both the chord and orientation parameters are present in the fretboard dictionary.
-def _is_valid_fretboard(fretboard_dict: Dict[Optional[int], Dict[str, List[List[str]]]], orientation: str, chord: Optional[int] = None) -> bool:
-
-    if chord:
-
-        if chord not in fretboard_dict:
-
-            print(f"Error: {chord} chord not found in fretboard dictionary.")
-
-            return False
-
-        if orientation not in fretboard_dict[chord]:
-
-            print(f"Error: {orientation} orientation not found in fretboard dictionary.")
-
-            return False
-        
-    else:
-
-        if orientation not in fretboard_dict:
-
-            print(f"Error: {orientation} orientation not found in fretboard dictionary.")
-
-            return False
-        
-    return True
+    return [note_sequence[(start_position + fret) % len(note_sequence)] if note_sequence[(start_position + fret) % len(note_sequence)] in scale_or_chord else "__" for fret in frets]
 
 
+
+if __name__ == "__main__":
+
+    chromatic_scale = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
+
+    scale_notes = ["C", "D", "E", "F", "G", "A", "B"]
+
+    start_position = chromatic_scale.index("C")
+
+    intervals = [0, 2, 4, 5, 7, 9, 11]
+
+    frets = range(16)
+
+    print(generate_sequence_from_intervals(start_position=start_position, note_sequence=chromatic_scale, intervals=intervals))
+
+    print(generate_string(start_position=start_position, note_sequence=chromatic_scale, scale_or_chord=scale_notes, frets=frets))

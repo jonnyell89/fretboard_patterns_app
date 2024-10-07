@@ -1,61 +1,109 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
-from config.config import DEFAULT_TUNING, DEFAULT_KEY, DEFAULT_SCALE
-# from app.library.tunings import tunings
-# from app.library.intervals import scale_patterns
-from app.fretboard_generator import FretboardGenerator
-from app.utils import print_fretboard, apply_fret_marker
+from config.config import CHROMATIC_SCALE, FRETBOARD_LEN
+from app.library.tunings import tunings
+from app.library.enums import ScaleTypes
+from app.scale_generator import ScaleGenerator
+from app.utils import generate_string
 
 class ScaleFretboard:
 
     """
-    A class to generate a guitar fretboard representation containing the notes of a specific scale, in both horizontal and vertical orientations.
+    A class to generate scale fretboards based on scale notes.
 
     Attributes:
 
-        fretboard_generator: A FretboardGenerator object.
-        key: The first note in the scale.
-        scale_pattern: The series of intervals that make up the scale.
-        key_index: The first note in the scale, relative to the chromatic scale.
-        scale_notes: The series of notes that make up the scale, derived from the chromatic scale.
-        scale_fretboard_dict: The horizontal and vertical orientations of the guitar fretboard containing the notes from the scale.
+        _fretboard_len: The length of the fretboard.
+        _frets: A range object, representing the fret positions on the fretboard.
+        _chromatic_scale: The twelve note chromatic scale.
+        _scale_string_cache: A dictionary, keyed by a tuple of scale key, scale type and tuning, containing a nested dictionary with root notes as keys and scale note string representations as values.
     
     """
 
-    def __init__(self, 
-                 fretboard_generator: FretboardGenerator,
-                 key: str = DEFAULT_KEY, 
-                 scale_pattern: List[int] = DEFAULT_SCALE
-                 ) -> None:
+    def __init__(self):
 
-        self.fretboard_generator = fretboard_generator
-        self.key: str = key
-        self.scale_pattern: List[int] = scale_pattern        
-        self.key_index: int = self.fretboard_generator.chromatic_scale.index(self.key)
-        self.scale_notes: List[str] = self.calculate_scale_notes()
-        self.scale_fretboard_dict: Dict[str, List[List[str]]] = {}
-        self.generate_scale_fretboard()
+        self._fretboard_len: int = FRETBOARD_LEN
+        self._frets: range = range(FRETBOARD_LEN)
+        self._chromatic_scale: List[str] = CHROMATIC_SCALE
+        self._scale_string_cache: Dict[Tuple[str, str, Tuple[str, ...]], Dict[str, List[str]]] = {}
 
-    # Generates a list of notes representing the scale, derived from the chromatic scale.
-    def calculate_scale_notes(self) -> List[str]:
+    def get_or_generate_scale_strings(self,
+                                      scale_notes: List[str],
+                                      scale_type: ScaleTypes,
+                                      tuning: List[str]
+                                      ) -> Dict[str, List[str]]:
+        
+        """
+        Retrieves scale strings from the cache, based on the scale notes, scale type and tuning.
+        If unavailable, generates scale strings and stores them in the cache.
+        
+        Args:
 
-        scale_notes: List[str] = [self.fretboard_generator.chromatic_scale[(self.key_index + note) % len(self.fretboard_generator.chromatic_scale)] for note in self.scale_pattern]
+            scale_notes: A list containing the scale notes.
+            scale_type: The name of the scale type.
+            tuning: A list containing the root note of each open string.
 
-        return scale_notes
+        Returns:
 
-    # Generates a scale orientated guitar fretboard in both horizontal and vertical orientations.
-    def generate_scale_fretboard(self) -> None:
+            scale_strings: A dictionary containing root notes as keys and scale note string representations as values.
+        
+        """
 
-        self.scale_fretboard_dict["x"] = self._apply_scale_to_fretboard(self.fretboard_generator.fretboard_dict["x"])
+        # Defines the scale string cache key
+        scale_string_cache_key: Tuple[str, str, Tuple[str, ...]] = (scale_notes[0], scale_type.value, tuning)
 
-        self.scale_fretboard_dict["y"] = self._apply_scale_to_fretboard(self.fretboard_generator.fretboard_dict["y"])
-    
-    # Helper method -> Logic: Applies the scale to the standard chromatic guitar fretboard.
-    def _apply_scale_to_fretboard(self, fretboard: List[List[str]]) -> List[List[str]]:
+        # Check if the cache key already exists
+        if scale_string_cache_key in self._scale_string_cache:
 
-        scale_fretboard: List[List[str]] = [[note if note in self.scale_notes else "__" for note in string] for string in fretboard]
+            return self._scale_string_cache[scale_string_cache_key]
+        
+        # Generates scale strings via the helper method
+        scale_strings: Dict[str, List[str]] = self._compute_scale_strings(scale_notes=scale_notes, 
+                                                                          tuning=tuning)
 
-        return scale_fretboard
+        # Stores the dictionary containing the scale strings in the cache
+        self._scale_string_cache[scale_string_cache_key] = scale_strings
+
+        return scale_strings
+
+    def _compute_scale_strings(self,
+                               scale_notes: List[str],
+                               tuning: List[str]
+                               ) -> Dict[str, List[str]]:
+        
+        """
+        Computes guitar string representations containing scale notes and blank spaces for notes that do not exist in the scale.
+
+        Args:
+
+            scale_notes: A list containing the scale notes.
+            tuning: A list containing the root note of each open string.
+
+        Returns:
+
+            scale_string_dict: A dictionary containing root notes as keys and scale note string representations as values.
+        
+        """
+
+        # Defines the dictionary to be returned
+        scale_string_dict: Dict[str, List[str]] = {}
+
+        # Generates a scale string for each root note in the tuning
+        for root_note in tuning:
+        
+            # String root note index position in the chromatic scale
+            root_index: int = self._chromatic_scale.index(root_note)
+
+            # Computes scale string from the chromatic scale starting at the root index
+            scale_string: List[str] = generate_string(start_position=root_index, 
+                                                      note_sequence=self._chromatic_scale, 
+                                                      scale_or_chord=scale_notes, 
+                                                      frets=self._frets)
+
+            # Stores scale string in the dictionary to be returned
+            scale_string_dict[root_note] = scale_string
+
+        return scale_string_dict
 
 
 
@@ -63,15 +111,22 @@ if __name__ == "__main__":
 
     print("--------------------")
 
-    demo_fretboard_generator = FretboardGenerator(tuning=DEFAULT_TUNING)
+    demo_scale_generator = ScaleGenerator()
 
-    demo_scale_fretboard = ScaleFretboard(fretboard_generator=demo_fretboard_generator, key=DEFAULT_KEY, scale_pattern=DEFAULT_SCALE)
+    demo_scale_notes = demo_scale_generator.get_or_generate_scale(scale_key="C", scale_type=ScaleTypes.MAJOR_SCALE)
 
-    demo_scale_fretboard_dict = demo_scale_fretboard.scale_fretboard_dict
+    print(demo_scale_notes)
 
-    apply_fret_marker(demo_scale_fretboard_dict, orientation="x")
+    print("--------------------")
 
-    print_fretboard(demo_scale_fretboard_dict, orientation="x")
-    print_fretboard(demo_scale_fretboard_dict, orientation="y")
+    demo_scale_fretboard = ScaleFretboard()
 
+    demo_scale_strings = demo_scale_fretboard.get_or_generate_scale_strings(scale_notes=demo_scale_notes, scale_type=ScaleTypes.MAJOR_SCALE, tuning=tunings["e_standard"])
 
+    print(demo_scale_strings)
+
+    print("--------------------")
+
+    print(demo_scale_fretboard._scale_string_cache)
+
+    print("--------------------")
