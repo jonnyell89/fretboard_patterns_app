@@ -3,7 +3,7 @@ from typing import List, Dict, Tuple
 from config.config import CHROMATIC_SCALE
 from app.library.intervals import scale_intervals
 from app.library.enums import ScaleTypes
-from app.utils import generate_sequence_from_intervals
+from app.utils import generate_sequence_from_intervals, generate_cache_key, get_or_generate
 
 class ScaleGenerator:
 
@@ -30,7 +30,7 @@ class ScaleGenerator:
                               ) -> List[str]:
         
         """
-        Retrieves scale notes from the cache, based on the scale key and scale type.
+        Generates a unique cache key, and then retrieves scale notes from the cache, based on the scale key and scale type.
         If unavailable, generates scale notes and stores them in the cache.
 
         Args:
@@ -41,26 +41,18 @@ class ScaleGenerator:
         Returns:
 
             scale_notes: A list containing the scale notes.
-
-        """
         
-        # Defines the scale notes cache key
-        scale_cache_key: Tuple[str, str] = (scale_key, scale_type.value)
+        """
 
-        # Checks if the cache key already exists
-        if scale_cache_key in self._scale_notes_cache:
+        cache_key: Tuple[str, str, str] = generate_cache_key("ScaleGenerator", scale_key, scale_type.value)
 
-            return self._scale_notes_cache[scale_cache_key]
-
-        # Generates scale notes via the helper method
-        scale_notes: List[str] = self._compute_scale_notes(scale_key=scale_key, 
-                                                           scale_type=scale_type)
-
-        # Stores scale notes in the cache
-        self._scale_notes_cache[scale_cache_key] = scale_notes
-
-        return scale_notes
+        scale_notes: List[str] = get_or_generate(cache=self._scale_notes_cache, 
+                                                 cache_key=cache_key, 
+                                                 generate_function=lambda: self._compute_scale_notes(scale_key=scale_key, 
+                                                                                                     scale_type=scale_type))
     
+        return scale_notes
+
     def _compute_scale_notes(self,
                              scale_key: str,
                              scale_type: ScaleTypes

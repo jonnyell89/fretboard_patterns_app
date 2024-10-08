@@ -4,7 +4,7 @@ from config.config import CHROMATIC_SCALE, FRETBOARD_LEN
 from app.library.tunings import tunings
 from app.library.enums import ScaleTypes
 from app.scale_generator import ScaleGenerator
-from app.utils import generate_string
+from app.utils import generate_string, generate_cache_key, get_or_generate
 
 class ScaleFretboard:
 
@@ -25,7 +25,7 @@ class ScaleFretboard:
         self._fretboard_len: int = FRETBOARD_LEN
         self._frets: range = range(FRETBOARD_LEN)
         self._chromatic_scale: List[str] = CHROMATIC_SCALE
-        self._scale_string_cache: Dict[Tuple[str, str, Tuple[str, ...]], Dict[str, List[str]]] = {}
+        self._scale_string_cache: Dict[Tuple[str, str, str, Tuple[str, ...]], Dict[str, List[str]]] = {}
 
     def get_or_generate_scale_strings(self,
                                       scale_notes: List[str],
@@ -33,7 +33,7 @@ class ScaleFretboard:
                                       tuning: List[str]
                                       ) -> Dict[str, List[str]]:
         
-        """
+        """ 
         Retrieves scale strings from the cache, based on the scale notes, scale type and tuning.
         If unavailable, generates scale strings and stores them in the cache.
         
@@ -46,23 +46,14 @@ class ScaleFretboard:
         Returns:
 
             scale_strings: A dictionary containing root notes as keys and scale note string representations as values.
-        
+
         """
 
-        # Defines the scale string cache key
-        scale_string_cache_key: Tuple[str, str, Tuple[str, ...]] = (scale_notes[0], scale_type.value, tuning)
+        cache_key: Tuple[str, str, str, Tuple[str, ...]] = generate_cache_key("ScaleFretboard", scale_notes[0], scale_type.value, tuning)
 
-        # Check if the cache key already exists
-        if scale_string_cache_key in self._scale_string_cache:
-
-            return self._scale_string_cache[scale_string_cache_key]
-        
-        # Generates scale strings via the helper method
-        scale_strings: Dict[str, List[str]] = self._compute_scale_strings(scale_notes=scale_notes, 
-                                                                          tuning=tuning)
-
-        # Stores the dictionary containing the scale strings in the cache
-        self._scale_string_cache[scale_string_cache_key] = scale_strings
+        scale_strings: Dict[str, List[str]] = get_or_generate(cache=self._scale_string_cache, 
+                                                              cache_key=cache_key, 
+                                                              generate_function=lambda: self._compute_scale_strings(scale_notes=scale_notes, tuning=tuning))
 
         return scale_strings
 

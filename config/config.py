@@ -5,4 +5,4 @@ CHROMATIC_SCALE: List[str] = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "
 FRETBOARD_LEN = 16
 
 NUM_FRETS: int = FRETBOARD_LEN
-FRETS: List[str] = [str(FRET) for FRET in range(NUM_FRETS)]
+FRETS: List[str] = [f"{FRET:<2}" for FRET in range(NUM_FRETS)]

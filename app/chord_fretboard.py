@@ -6,7 +6,7 @@ from app.library.tunings import tunings
 from app.library.enums import ScaleTypes, ChordTypes
 from app.scale_generator import ScaleGenerator
 from app.chord_generator import ChordGenerator
-from app.utils import generate_string
+from app.utils import generate_string, generate_cache_key, get_or_generate
 
 class ChordFretboard:
 
@@ -27,7 +27,7 @@ class ChordFretboard:
         self._fretboard_len: int = FRETBOARD_LEN
         self._frets: range = range(FRETBOARD_LEN)
         self._chromatic_scale: List[str] = CHROMATIC_SCALE
-        self._chord_string_cache: Dict[Tuple[str, str, str, Tuple[str, ...]], Dict[str, Dict[str, List[str]]]] = {}
+        self._chord_string_cache: Dict[Tuple[str, str, str, str, Tuple[str, ...]], Dict[str, Dict[str, List[str]]]] = {}
 
     def get_or_generate_chord_strings(self,
                                       scale_notes: List[str],
@@ -51,28 +51,20 @@ class ChordFretboard:
 
         Returns:
 
-            chord_string_dict: A dictionary, keyed by chord degrees, containing a nested dictionary with root notes as keys and chord note strings as values.
+            chord_strings: A dictionary, keyed by chord degrees, containing a nested dictionary with root notes as keys and chord note strings as values.
         
         """
 
-        # Defines the chord string cache key
-        chord_string_cache_key: Tuple[str, str, str, Tuple[str, ...]] = (scale_notes[0], scale_type.value, chord_type.value, tuning)
+        cache_key: Tuple[str, str, str, str, Tuple[str, ...]] = generate_cache_key("ChordFretboard", scale_notes[0], scale_type.value, chord_type.value, tuning)
 
-        # Check if the cache key already exists
-        if chord_string_cache_key in self._chord_string_cache:
+        chord_strings: Dict[str, Dict[str, List[str]]] = get_or_generate(cache=self._chord_string_cache, 
+                                                                         cache_key=cache_key, 
+                                                                         generate_function=lambda: self._compute_chord_strings(chord_notes=chord_notes, 
+                                                                                                                               scale_type=scale_type, 
+                                                                                                                               chord_type=chord_type, 
+                                                                                                                               tuning=tuning))
 
-            return self._chord_string_cache[chord_string_cache_key]
-        
-        # Generates chord strings via the helper method
-        chord_string_dict: Dict[str, Dict[str, List[str]]] = self._compute_chord_strings(chord_notes=chord_notes, 
-                                                                                         scale_type=scale_type, 
-                                                                                         chord_type=chord_type, 
-                                                                                         tuning=tuning)
-
-        # Stores the dictionary containing the chord strings in the cache
-        self._chord_string_cache[chord_string_cache_key] = chord_string_dict
-
-        return chord_string_dict
+        return chord_strings
 
     def _compute_chord_strings(self,
                                chord_notes: Dict[str, List[str]],

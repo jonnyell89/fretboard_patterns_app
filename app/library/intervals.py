@@ -8,7 +8,7 @@ scale_intervals = {
 
     "melodic_minor": (0, 2, 3, 5, 7, 9, 11),
 
-    "ionian_mode": (0, 2, 4, 5, 7, 9, 11),
+    # "ionian_mode": (0, 2, 4, 5, 7, 9, 11),
 
     "dorian_mode": (0, 2, 3, 5, 7, 9, 10),
 
@@ -18,7 +18,7 @@ scale_intervals = {
 
     "mixolydian_mode": (0, 2, 4, 5, 7, 9, 10),
 
-    "aeolian_mode": (0, 2, 3, 5, 7, 8, 10),
+    # "aeolian_mode": (0, 2, 3, 5, 7, 8, 10),
 
     "locrian_mode": (0, 1, 3, 5, 6, 8, 10),
 

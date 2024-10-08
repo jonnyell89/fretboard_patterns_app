@@ -4,7 +4,7 @@ from app.library.intervals import chord_intervals
 from app.library.degrees import chord_degrees
 from app.library.enums import ScaleTypes, ChordTypes
 from app.scale_generator import ScaleGenerator
-from app.utils import generate_sequence_from_intervals
+from app.utils import generate_sequence_from_intervals, generate_cache_key, get_or_generate
 
 class ChordGenerator:
 
@@ -44,22 +44,14 @@ class ChordGenerator:
         
         """
 
-        # Defines the chord notes cache key
-        chord_cache_key: Tuple[str, str, str] = (scale_notes[0], scale_type.value, chord_type.value)
+        cache_key: Tuple[str, str, str, str] = generate_cache_key("ChordGenerator", scale_notes[0], scale_type.value, chord_type.value)
 
-        # Checks if the cache key already exists
-        if chord_cache_key in self._chord_notes_cache:
-
-            return self._chord_notes_cache[chord_cache_key]
+        chord_notes: Dict[str, List[str]] = get_or_generate(cache=self._chord_notes_cache, 
+                                                            cache_key=cache_key, 
+                                                            generate_function=lambda: self._compute_chord_notes(scale_notes=scale_notes, 
+                                                                                                                scale_type=scale_type, 
+                                                                                                                chord_type=chord_type))
         
-        # Generates chord notes via the helper method
-        chord_notes: Dict[str, List[str]] = self._compute_chord_notes(scale_notes=scale_notes, 
-                                                                      scale_type=scale_type, 
-                                                                      chord_type=chord_type)
-
-        # Stores the dictionary containing the chord notes in the cache
-        self._chord_notes_cache[chord_cache_key] = chord_notes
-
         return chord_notes
 
     def _compute_chord_notes(self, 
@@ -96,7 +88,9 @@ class ChordGenerator:
             chord_cache_key: str = (chord_degrees[chord_type.value][scale_type.value][chord_degree])
 
             # Computes chord notes from the chord intervals via the scale notes
-            chord_notes: List[str] = generate_sequence_from_intervals(start_position=chord_degree, note_sequence=scale_notes, intervals=intervals)
+            chord_notes: List[str] = generate_sequence_from_intervals(start_position=chord_degree, 
+                                                                      note_sequence=scale_notes, 
+                                                                      intervals=intervals)
 
             # Stores chord notes in the dictionary to be returned
             chord_notes_dict[chord_cache_key] = chord_notes
